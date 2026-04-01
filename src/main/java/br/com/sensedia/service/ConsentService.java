@@ -4,6 +4,7 @@ import br.com.sensedia.domain.enums.ConsentStatus;
 import br.com.sensedia.domain.model.Consent;
 import br.com.sensedia.dto.ConsentRequestDTO;
 import br.com.sensedia.dto.ConsentResponseDTO;
+import br.com.sensedia.exception.ConsentNotFoundException;
 import br.com.sensedia.mapper.ConsentMapper;
 import br.com.sensedia.repository.ConsentRepository;
 import org.springframework.data.domain.Page;
@@ -43,7 +44,7 @@ public class ConsentService {
     }
 
     public ConsentResponseDTO getConsentById(UUID id) {
-        return mapper.toDto(repository.findById(id).orElseThrow(()-> new RuntimeException("Consentimento não encontrado")));
+        return mapper.toDto(repository.findById(id).orElseThrow(()-> new ConsentNotFoundException("Consentimento não encontrado")));
     }
 
     public Page<ConsentResponseDTO> getAllConsents(Pageable pageable) {
@@ -52,7 +53,7 @@ public class ConsentService {
     }
 
     public ConsentResponseDTO updateConsent(UUID consentId, ConsentRequestDTO data){
-        Consent consent = repository.findById(consentId).orElseThrow(()-> new RuntimeException("Consentimento não encontrado"));
+        Consent consent = repository.findById(consentId).orElseThrow(()-> new ConsentNotFoundException("Consentimento não encontrado"));
 
         consent.setExpirationDateTime(data.expirationDateTime());
         consent.setAdditionalInfo(data.additionalInfo());
@@ -66,7 +67,7 @@ public class ConsentService {
 
     public void revokeConsent(UUID id) {
         Consent consent = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Consentimento não encontrado"));
+                .orElseThrow(() -> new ConsentNotFoundException("Consentimento não encontrado"));
 
         consent.setStatus(ConsentStatus.REVOKED);
         repository.save(consent);
