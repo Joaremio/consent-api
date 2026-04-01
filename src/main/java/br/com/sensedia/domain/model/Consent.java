@@ -37,4 +37,6 @@ public class Consent {
     @Size(min = 1, max = 50)
     private String additionalInfo;
 
+    private String idempotencyKey;
+
 }
