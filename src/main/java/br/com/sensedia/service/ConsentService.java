@@ -6,6 +6,8 @@ import br.com.sensedia.dto.ConsentRequestDTO;
 import br.com.sensedia.dto.ConsentResponseDTO;
 import br.com.sensedia.mapper.ConsentMapper;
 import br.com.sensedia.repository.ConsentRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -41,6 +43,34 @@ public class ConsentService {
     }
 
     public ConsentResponseDTO getConsentById(UUID id) {
-        return mapper.toDto(repository.findById(id).orElseThrow(()-> new RuntimeException("Consent not found")));
+        return mapper.toDto(repository.findById(id).orElseThrow(()-> new RuntimeException("Consentimento não encontrado")));
     }
+
+    public Page<ConsentResponseDTO> getAllConsents(Pageable pageable) {
+        return repository.findAll(pageable)
+                .map(mapper::toDto);
+    }
+
+    public ConsentResponseDTO updateConsent(UUID consentId, ConsentRequestDTO data){
+        Consent consent = repository.findById(consentId).orElseThrow(()-> new RuntimeException("Consentimento não encontrado"));
+
+        consent.setExpirationDateTime(data.expirationDateTime());
+        consent.setAdditionalInfo(data.additionalInfo());
+
+
+        Consent UpdateConsent = repository.save(consent);
+
+
+        return   mapper.toDto(UpdateConsent);
+    }
+
+    public void revokeConsent(UUID id) {
+        Consent consent = repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Consentimento não encontrado"));
+
+        consent.setStatus(ConsentStatus.REVOKED);
+        repository.save(consent);
+    }
+
+
 }
