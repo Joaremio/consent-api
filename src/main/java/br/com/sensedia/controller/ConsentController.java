@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -24,13 +25,17 @@ public class ConsentController {
     }
 
     @PostMapping
-    public ResponseEntity<ConsentResponseDTO> createConsent(
+    public ResponseEntity<ConsentResponseDTO> create(
             @RequestHeader("X-Idempotency-Key") String idempotencyKey,
-            @Valid @RequestBody ConsentRequestDTO data) {
+            @Valid @RequestBody ConsentRequestDTO dto) {
 
-        ConsentResponseDTO response = consentService.createConsent(data, idempotencyKey);
+        ConsentResponseDTO response = consentService.createConsent(dto, idempotencyKey);
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        if (response.creationDateTime().isAfter(LocalDateTime.now().minusSeconds(1))) {
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        }
+
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{consentId}")
