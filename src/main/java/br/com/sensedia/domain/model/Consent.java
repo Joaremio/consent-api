@@ -8,6 +8,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
@@ -37,6 +38,8 @@ public class Consent {
     @Size(min = 1, max = 50)
     private String additionalInfo;
 
+    @NotNull
+    @Indexed(unique = true)
     private String idempotencyKey;
 
 }
