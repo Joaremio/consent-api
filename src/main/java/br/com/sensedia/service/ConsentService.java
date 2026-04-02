@@ -4,6 +4,7 @@ import br.com.sensedia.domain.enums.ConsentStatus;
 import br.com.sensedia.domain.model.Consent;
 import br.com.sensedia.dto.ConsentRequestDTO;
 import br.com.sensedia.dto.ConsentResponseDTO;
+import br.com.sensedia.dto.CreateConsentResultDTO;
 import br.com.sensedia.exception.ConsentNotFoundException;
 import br.com.sensedia.mapper.ConsentMapper;
 import br.com.sensedia.repository.ConsentRepository;
@@ -12,6 +13,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -25,22 +27,43 @@ public class ConsentService {
         this.mapper = mapper;
     }
 
-    public ConsentResponseDTO createConsent(ConsentRequestDTO dto, String idempotencyKey) {
-        return repository.findByIdempotencyKey(idempotencyKey)
-                .map(existingConsent -> {
-                    return mapper.toDto(existingConsent);
-                })
-                .orElseGet(() -> {
-                    Consent newConsent = mapper.toModel(dto);
+    public CreateConsentResultDTO createConsent(ConsentRequestDTO dto, String idempotencyKey) {
 
-                    newConsent.setId(UUID.randomUUID());
-                    newConsent.setStatus(ConsentStatus.ACTIVE);
-                    newConsent.setCreationDateTime(LocalDateTime.now());
-                    newConsent.setIdempotencyKey(idempotencyKey);
+        Optional<Consent> existingConsentOpt = repository.findByIdempotencyKey(idempotencyKey);
 
-                    Consent saved = repository.save(newConsent);
-                    return mapper.toDto(saved);
-                });
+        if (existingConsentOpt.isPresent()) {
+            Consent existingConsent = existingConsentOpt.get();
+
+            boolean isSamePayload = existingConsent.getAdditionalInfo()
+                    .equals(dto.additionalInfo());
+
+            if (!isSamePayload) {
+                throw new IllegalArgumentException("Payload diferente para mesma chave");
+            }
+
+            CreateConsentResultDTO response = new CreateConsentResultDTO(
+                    mapper.toDto(existingConsent),
+                    false
+            );
+
+            return response;
+        }
+
+        Consent newConsent = mapper.toModel(dto);
+
+        newConsent.setId(UUID.randomUUID());
+        newConsent.setStatus(ConsentStatus.ACTIVE);
+        newConsent.setCreationDateTime(LocalDateTime.now());
+        newConsent.setIdempotencyKey(idempotencyKey);
+
+        Consent savedConsent = repository.save(newConsent);
+
+        CreateConsentResultDTO response = new CreateConsentResultDTO(
+                mapper.toDto(savedConsent),
+                true
+        );
+
+        return response;
     }
 
     public ConsentResponseDTO getConsentById(UUID id) {

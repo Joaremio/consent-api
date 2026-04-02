@@ -2,6 +2,7 @@ package br.com.sensedia.controller;
 
 import br.com.sensedia.dto.ConsentRequestDTO;
 import br.com.sensedia.dto.ConsentResponseDTO;
+import br.com.sensedia.dto.CreateConsentResultDTO;
 import br.com.sensedia.service.ConsentService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
@@ -29,13 +30,13 @@ public class ConsentController {
             @RequestHeader("X-Idempotency-Key") String idempotencyKey,
             @Valid @RequestBody ConsentRequestDTO dto) {
 
-        ConsentResponseDTO response = consentService.createConsent(dto, idempotencyKey);
+        CreateConsentResultDTO result = consentService.createConsent(dto, idempotencyKey);
 
-        if (response.creationDateTime().isAfter(LocalDateTime.now().minusSeconds(1))) {
-            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        if (result.isNew()) {
+            return ResponseEntity.status(HttpStatus.CREATED).body(result.data());
         }
 
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(result.data());
     }
 
     @GetMapping("/{consentId}")
