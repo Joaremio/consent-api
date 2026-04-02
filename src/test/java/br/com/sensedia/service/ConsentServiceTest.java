@@ -4,6 +4,7 @@ import br.com.sensedia.domain.enums.ConsentStatus;
 import br.com.sensedia.domain.model.Consent;
 import br.com.sensedia.dto.ConsentRequestDTO;
 import br.com.sensedia.dto.ConsentResponseDTO;
+import br.com.sensedia.dto.CreateConsentResultDTO;
 import br.com.sensedia.exception.ConsentNotFoundException;
 import br.com.sensedia.mapper.ConsentMapper;
 import br.com.sensedia.repository.ConsentRepository;
@@ -44,18 +45,18 @@ class ConsentServiceTest {
         savedModel.setId(UUID.randomUUID());
         savedModel.setCreationDateTime(LocalDateTime.now());
 
-        ConsentResponseDTO expectedResponse = new ConsentResponseDTO(savedModel.getId(), "123.801.025-01", ConsentStatus.ACTIVE, savedModel.getCreationDateTime(), null, "Alguns dados");
-
+        ConsentResponseDTO expectedResponseData = new ConsentResponseDTO(savedModel.getId(), "123.801.025-01", ConsentStatus.ACTIVE, savedModel.getCreationDateTime(), null, "Alguns dados");
         when(repository.findByIdempotencyKey(key)).thenReturn(Optional.empty());
         when(mapper.toModel(dto)).thenReturn(model);
         when(repository.save(any(Consent.class))).thenReturn(savedModel);
-        when(mapper.toDto(savedModel)).thenReturn(expectedResponse);
+        when(mapper.toDto(savedModel)).thenReturn(expectedResponseData);
 
 
-        ConsentResponseDTO result = service.createConsent(dto, key);
+        CreateConsentResultDTO result = service.createConsent(dto,key);
 
         assertNotNull(result);
-        assertEquals(expectedResponse.id(), result.id());
+        assertEquals(expectedResponseData.id(), result.data().id());
+        assertTrue(result.isNew());
         verify(repository, times(1)).save(any(Consent.class));
     }
 
@@ -63,16 +64,35 @@ class ConsentServiceTest {
     void shouldReturnExistingConsentWhenIdempotencyKeyExists() {
         String key = "123ABC";
 
-        ConsentRequestDTO dto = mock(ConsentRequestDTO.class);
+        ConsentRequestDTO dto = new ConsentRequestDTO(
+                "123.456.389-02",
+                LocalDateTime.now(),
+                "Alguns dados"
+        );
+
         Consent existing = new Consent();
-        ConsentResponseDTO response = mock(ConsentResponseDTO.class);
+        existing.setAdditionalInfo("Alguns dados");
+
+        ConsentResponseDTO response = new ConsentResponseDTO(
+                UUID.randomUUID(),
+                "123.456.389-02",
+                ConsentStatus.ACTIVE,
+                LocalDateTime.now(),
+                null,
+                "Alguns dados"
+        );
 
         when(repository.findByIdempotencyKey(key)).thenReturn(Optional.of(existing));
         when(mapper.toDto(existing)).thenReturn(response);
 
-        ConsentResponseDTO result = service.createConsent(dto, key);
+        CreateConsentResultDTO result = service.createConsent(dto, key);
 
         assertNotNull(result);
+        assertFalse(result.isNew());
+
+        assertEquals(response.id(), result.data().id());
+        assertEquals(response.additionalInfo(), result.data().additionalInfo());
+
         verify(repository, never()).save(any());
     }
 
@@ -97,7 +117,7 @@ class ConsentServiceTest {
 
         when(repository.findById(id)).thenReturn(Optional.empty());
 
-        assertThrows(RuntimeException.class, () -> {
+        assertThrows(ConsentNotFoundException.class, () -> {
             service.getConsentById(id);
         });
     }
