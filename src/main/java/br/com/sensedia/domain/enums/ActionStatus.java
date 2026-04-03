@@ -4,5 +4,6 @@ public enum ActionStatus {
     CREATE,
     UPDATE,
     PATCH_UPDATE,
-    REVOKE
+    REVOKE,
+    SYSTEM_EXPIRE
 }
