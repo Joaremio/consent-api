@@ -1,0 +1,29 @@
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: consent-db
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - consent-network
+
+  consent-api:
+    build: .
+    container_name: consent-app
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mongodb
+    environment:
+      - SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/consent_db
+    networks:
+      - consent-network
+
+networks:
+  consent-network:
+    driver: bridge
+
+volumes:
+  mongo-data:
