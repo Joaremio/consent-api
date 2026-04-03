@@ -22,7 +22,7 @@ import java.util.UUID;
 public class Consent {
 
     @Id
-    private UUID id;
+    private String id;
 
     @NotNull
     @Pattern(regexp = "\\d{3}\\.\\d{3}\\.\\d{3}-\\d{2}", message = "Formato de CPF inválido. Use ###.###.###-##")
