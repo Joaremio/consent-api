@@ -15,6 +15,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -33,8 +34,11 @@ class ConsentHistoryServiceTest {
     @Test
     @DisplayName("Deve salvar o histórico com todos os campos preenchidos corretamente")
     void shouldSaveHistoryWithAllFields() {
+
+        UUID id = UUID.randomUUID();
+
         Consent consent = new Consent();
-        consent.setId("consent-123");
+        consent.setId(id);
         consent.setCpf("123.456.789-00");
         consent.setStatus(ConsentStatus.ACTIVE);
 
@@ -43,7 +47,7 @@ class ConsentHistoryServiceTest {
         service.saveHistory(consent, action);
 
         verify(repository, times(1)).save(argThat(history ->
-                history.getConsentId().equals("consent-123") &&
+                history.getConsentId().equals(id) &&
                         history.getCpf().equals("123.456.789-00") &&
                         history.getAction().equals(ActionStatus.CREATE) &&
                         history.getTimestamp() != null
@@ -53,10 +57,12 @@ class ConsentHistoryServiceTest {
     @Test
     @DisplayName("Deve retornar a lista de histórico ordenada por data")
     void shouldReturnHistoryList() {
-        String consentId = "consent-123";
+        UUID id = UUID.randomUUID();
+        UUID consentId = UUID.randomUUID();
+
         List<ConsentHistory> mockList = List.of(
-                new ConsentHistory("1", consentId, "123.456.789-00", ConsentStatus.ACTIVE, ActionStatus.UPDATE, LocalDateTime.now()),
-                new ConsentHistory("2", consentId, "123.456.789-00", ConsentStatus.ACTIVE, ActionStatus.CREATE, LocalDateTime.now().minusHours(1))
+                new ConsentHistory(id, consentId, "123.456.789-00", ConsentStatus.ACTIVE, ActionStatus.UPDATE, LocalDateTime.now()),
+                new ConsentHistory(id, consentId, "123.456.789-00", ConsentStatus.ACTIVE, ActionStatus.CREATE, LocalDateTime.now().minusHours(1))
         );
 
         when(repository.findByConsentIdOrderByTimestampDesc(consentId)).thenReturn(mockList);

@@ -62,8 +62,12 @@ public class ConsentController {
             summary = "Buscar consentimento por ID",
             description = "Retorna informações de um consentimento específico."
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Consentimento encontrado"),
+            @ApiResponse(responseCode = "404", description = "Consentimento não encontrado")
+    })
     @GetMapping("/{consentId}")
-    public ResponseEntity<ConsentResponseDTO> getConsentById(@PathVariable String consentId) {
+    public ResponseEntity<ConsentResponseDTO> getConsentById(@PathVariable UUID consentId) {
         return ResponseEntity.ok(consentService.getConsentById(consentId));
     }
 
@@ -71,6 +75,9 @@ public class ConsentController {
             summary = "Listar consentimentos",
             description = "Retorna uma lista paginada de todos os consentimentos."
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Lista retornada com sucesso")
+    })
     @GetMapping
     public ResponseEntity<Page<ConsentResponseDTO>> getAllConsents(Pageable pageable) {
         return ResponseEntity.ok(consentService.getAllConsents(pageable));
@@ -80,8 +87,12 @@ public class ConsentController {
             summary = "Atualizar consentimento",
             description = "Permite atualizar informações de um consentimento existente."
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Consentimento atualizado"),
+            @ApiResponse(responseCode = "404", description = "Consentimento não encontrado"),
+    })
     @PutMapping("/{id}")
-    public ResponseEntity<ConsentResponseDTO> update(@PathVariable String id, @Valid @RequestBody ConsentRequestDTO dto) {
+    public ResponseEntity<ConsentResponseDTO> update(@PathVariable UUID id, @Valid @RequestBody ConsentRequestDTO dto) {
         return ResponseEntity.ok(consentService.updateConsent(id, dto));
     }
 
@@ -89,8 +100,12 @@ public class ConsentController {
             summary = "Atualização parcial",
             description = "Atualiza apenas os campos enviados no corpo da requisição."
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Consentimento atualizado parcialmente"),
+            @ApiResponse(responseCode = "404", description = "Consentimento não encontrado")
+    })
     @PatchMapping("/{id}")
-    public ResponseEntity<ConsentResponseDTO> patch(@PathVariable String id, @RequestBody ConsentRequestDTO dto) {
+    public ResponseEntity<ConsentResponseDTO> patch(@PathVariable UUID id, @RequestBody ConsentRequestDTO dto) {
         return ResponseEntity.ok(consentService.patchConsent(id, dto));
     }
 
@@ -98,8 +113,12 @@ public class ConsentController {
             summary = "Revogar consentimento",
             description = "Realiza a revogação lógica (Soft Delete) do consentimento."
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Consentimento revogado com sucesso"),
+            @ApiResponse(responseCode = "404", description = "Consentimento não encontrado")
+    })
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> revoke(@PathVariable String id) {
+    public ResponseEntity<Void> revoke(@PathVariable UUID id) {
         consentService.revokeConsent(id);
         return ResponseEntity.noContent().build();
     }
@@ -108,10 +127,14 @@ public class ConsentController {
             summary = "Consultar histórico de um consentimento",
             description = "Retorna a trilha de auditoria de um consentimento específico, listando todas as alterações de estado"
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Histórico retornado com sucesso"),
+            @ApiResponse(responseCode = "404", description = "Consentimento não encontrado")
+    })
     @GetMapping("/{consentId}/history")
     public ResponseEntity<List<ConsentHistory>> getHistory(
             @Parameter(description = "String do consentimento original", required = true)
-            @PathVariable String consentId) {
+            @PathVariable UUID consentId) {
         return ResponseEntity.ok(consentHistoryService.getHistoryByConsentId(consentId));
     }
 }

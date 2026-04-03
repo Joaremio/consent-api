@@ -14,6 +14,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -37,7 +38,7 @@ class SchedulingConfigTest {
     void shouldExpireConsentsWhenDateTimeIsBeforeNow() {
 
         Consent expiredConsent = new Consent();
-        expiredConsent.setId("65f1a2b3c4d5e6f7a8b9c0d1");
+        expiredConsent.setId(UUID.randomUUID());
         expiredConsent.setStatus(ConsentStatus.ACTIVE);
 
         List<Consent> expiredList = List.of(expiredConsent);

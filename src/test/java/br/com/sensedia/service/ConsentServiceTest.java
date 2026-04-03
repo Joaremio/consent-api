@@ -7,6 +7,7 @@ import br.com.sensedia.dto.ConsentRequestDTO;
 import br.com.sensedia.dto.ConsentResponseDTO;
 import br.com.sensedia.dto.CreateConsentResultDTO;
 import br.com.sensedia.exception.ConsentNotFoundException;
+import br.com.sensedia.exception.IdempotencyConflictException;
 import br.com.sensedia.mapper.ConsentMapper;
 import br.com.sensedia.repository.ConsentRepository;
 import org.junit.jupiter.api.DisplayName;
@@ -18,6 +19,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -42,7 +44,7 @@ class ConsentServiceTest {
     @DisplayName("Deve criar novo consentimento quando a chave de idempotência for inédita")
     void shouldCreateNewConsent() {
         String key = "123ABC";
-        String idTest = "65f1a2b3c4d5e6f7a8b9c0d1";
+        UUID idTest = UUID.randomUUID();
         ConsentRequestDTO dto = new ConsentRequestDTO("123.801.025-01", LocalDateTime.now(), "Alguns dados");
         Consent model = new Consent();
         Consent savedModel = new Consent();
@@ -67,7 +69,7 @@ class ConsentServiceTest {
     @Test
     void shouldReturnExistingConsentWhenIdempotencyKeyExists() {
         String key = "123ABC";
-        String idTest = "65f1a2b3c4d5e6f7a8b9c0d1";
+        UUID idTest = UUID.randomUUID();
         ConsentRequestDTO dto = new ConsentRequestDTO(
                 "123.456.389-02",
                 LocalDateTime.now(),
@@ -102,7 +104,7 @@ class ConsentServiceTest {
 
     @Test
     void shouldReturnConsentById() {
-        String idTest = "65f1a2b3c4d5e6f7a8b9c0d1";
+        UUID idTest = UUID.randomUUID();
 
         Consent consent = new Consent();
         ConsentResponseDTO dto = mock(ConsentResponseDTO.class);
@@ -117,7 +119,7 @@ class ConsentServiceTest {
 
     @Test
     void shouldThrowExceptionWhenConsentNotFound() {
-        String idTest = "65f1a2b3c4d5e6f7a8b9c0d1";
+        UUID idTest = UUID.randomUUID();
 
         when(consentRepository.findById(idTest)).thenReturn(Optional.empty());
 
@@ -149,7 +151,7 @@ class ConsentServiceTest {
 
         when(consentRepository.findByIdempotencyKey(key)).thenReturn(Optional.of(existing));
 
-        assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IdempotencyConflictException.class, () -> {
             service.createConsent(dtoB, key);
         });
     }
@@ -157,7 +159,7 @@ class ConsentServiceTest {
     @Test
     @DisplayName("Deve retornar erro customizado quando o ID não existir")
     void shouldThrowExceptionWhenNotFound() {
-        String idTest = "65f1a2b3c4d5e6f7a8b9c0d1";
+        UUID idTest = UUID.randomUUID();
         when(consentRepository.findById(idTest)).thenReturn(Optional.empty());
 
         assertThrows(ConsentNotFoundException.class, () -> service.getConsentById(idTest));
@@ -167,7 +169,7 @@ class ConsentServiceTest {
     @DisplayName("Deve revogar um consentimento e salvar no histórico")
     void shouldRevokeConsentSuccessfully() {
 
-        String idTest = "65f1a2b3c4d5e6f7a8b9c0d1";
+        UUID idTest = UUID.randomUUID();
         Consent consent = new Consent();
         consent.setId(idTest);
         consent.setStatus(ConsentStatus.ACTIVE);
@@ -184,7 +186,7 @@ class ConsentServiceTest {
     @Test
     @DisplayName("Deve lançar exceção ao tentar revogar consentimento inexistente")
     void shouldThrowExceptionWhenRevokingInexistent() {
-        String idTest = "65f1a2b3c4d5e6f7a8b9c0d1";
+        UUID idTest = UUID.randomUUID();
         when(consentRepository.findById(idTest)).thenReturn(Optional.empty());
 
         assertThrows(ConsentNotFoundException.class, () -> service.revokeConsent(idTest));

@@ -5,7 +5,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 public record ConsentResponseDTO(
-        String id,
+        UUID id,
         String cpf,
         ConsentStatus status,
         LocalDateTime creationDateTime,

@@ -19,8 +19,8 @@ import java.util.UUID;
 @NoArgsConstructor
 public class ConsentHistory {
     @Id
-    private String id;
-    private String consentId;
+    private UUID id;
+    private UUID consentId;
     private String cpf;
     private ConsentStatus status;
     private ActionStatus action;

@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class ConsentHistoryService {
@@ -20,6 +21,7 @@ public class ConsentHistoryService {
     public void saveHistory(Consent consent, ActionStatus action) {
         ConsentHistory history = new ConsentHistory();
 
+        history.setId(UUID.randomUUID());
         history.setConsentId(consent.getId());
         history.setCpf(consent.getCpf());
         history.setStatus(consent.getStatus());
@@ -29,7 +31,7 @@ public class ConsentHistoryService {
         consentHistoryRepository.save(history);
     }
 
-    public List<ConsentHistory> getHistoryByConsentId(String consentId) {
+    public List<ConsentHistory> getHistoryByConsentId(UUID consentId) {
         return consentHistoryRepository.findByConsentIdOrderByTimestampDesc(consentId);
     }
 }

@@ -12,7 +12,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Repository
-public interface ConsentRepository extends MongoRepository<Consent, String> {
+public interface ConsentRepository extends MongoRepository<Consent, UUID> {
     Optional<Consent> findByIdempotencyKey(String idempotencyKey);
     List<Consent> findByStatusAndExpirationDateTimeBefore(ConsentStatus status, LocalDateTime dateTime);
 }
