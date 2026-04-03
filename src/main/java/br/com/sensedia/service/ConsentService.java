@@ -14,19 +14,20 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
 @Service
 public class ConsentService {
 
-    private final ConsentRepository repository;
+    private final ConsentRepository consentRepository;
     private final ConsentHistoryService historyService;
     private final ConsentMapper mapper;
 
 
     public ConsentService( ConsentRepository repository, ConsentHistoryService historyService ,ConsentMapper mapper) {
-        this.repository = repository;
+        this.consentRepository = repository;
         this.historyService = historyService;
         this.mapper = mapper;
 
@@ -34,13 +35,12 @@ public class ConsentService {
 
     public CreateConsentResultDTO createConsent(ConsentRequestDTO dto, String idempotencyKey) {
 
-        Optional<Consent> existingConsentOpt = repository.findByIdempotencyKey(idempotencyKey);
+        Optional<Consent> existingConsentOpt = consentRepository.findByIdempotencyKey(idempotencyKey);
 
         if (existingConsentOpt.isPresent()) {
             Consent existingConsent = existingConsentOpt.get();
 
-            boolean isSamePayload = existingConsent.getAdditionalInfo()
-                    .equals(dto.additionalInfo());
+            boolean isSamePayload = Objects.equals(existingConsent.getAdditionalInfo(), dto.additionalInfo());
 
             if (!isSamePayload) {
                 throw new IllegalArgumentException("Payload diferente para mesma chave");
@@ -56,12 +56,11 @@ public class ConsentService {
 
         Consent newConsent = mapper.toModel(dto);
 
-        newConsent.setId(UUID.randomUUID());
         newConsent.setStatus(ConsentStatus.ACTIVE);
         newConsent.setCreationDateTime(LocalDateTime.now());
         newConsent.setIdempotencyKey(idempotencyKey);
 
-        Consent savedConsent = repository.save(newConsent);
+        Consent savedConsent = consentRepository.save(newConsent);
 
         historyService.saveHistory(savedConsent, ActionStatus.CREATE);
 
@@ -73,48 +72,50 @@ public class ConsentService {
         return response;
     }
 
-    public ConsentResponseDTO getConsentById(UUID id) {
-        return mapper.toDto(repository.findById(id).orElseThrow(()-> new ConsentNotFoundException("Consentimento não encontrado")));
+    public ConsentResponseDTO getConsentById(String consentId) {
+        return mapper.toDto(consentRepository.findById(consentId).orElseThrow(()-> new ConsentNotFoundException("Consentimento não encontrado")));
     }
 
     public Page<ConsentResponseDTO> getAllConsents(Pageable pageable) {
-        return repository.findAll(pageable)
+        return consentRepository.findAll(pageable)
                 .map(mapper::toDto);
     }
 
-    public ConsentResponseDTO updateConsent(UUID consentId, ConsentRequestDTO data){
-        Consent consent = repository.findById(consentId).orElseThrow(()-> new ConsentNotFoundException("Consentimento não encontrado"));
+    public ConsentResponseDTO updateConsent(String consentId, ConsentRequestDTO data){
+        Consent consent = consentRepository.findById(consentId).orElseThrow(()-> new ConsentNotFoundException("Consentimento não encontrado"));
 
         consent.setExpirationDateTime(data.expirationDateTime());
         consent.setAdditionalInfo(data.additionalInfo());
 
 
-        Consent updateConsent = repository.save(consent);
+        Consent updateConsent = consentRepository.save(consent);
 
         historyService.saveHistory(updateConsent, ActionStatus.UPDATE);
 
         return mapper.toDto(updateConsent);
     }
 
-    public ConsentResponseDTO patchConsent(UUID id, ConsentRequestDTO dto) {
-        Consent existingConsent = repository.findById(id)
+    public ConsentResponseDTO patchConsent(String consentId, ConsentRequestDTO dto) {
+        Consent existingConsent = consentRepository.findById(consentId)
                 .orElseThrow(() -> new ConsentNotFoundException("Consentimento não encontrado"));
 
         mapper.updateResultFromDto(dto, existingConsent);
-        Consent saved = repository.save(existingConsent);
+        Consent saved = consentRepository.save(existingConsent);
 
         historyService.saveHistory(saved, ActionStatus.PATCH_UPDATE);
 
         return mapper.toDto(saved);
     }
 
-    public void revokeConsent(UUID id) {
-        Consent consent = repository.findById(id)
+    public void revokeConsent(String consentId) {
+        Consent consent = consentRepository.findById(consentId)
                 .orElseThrow(() -> new ConsentNotFoundException("Consentimento não encontrado"));
 
         consent.setStatus(ConsentStatus.REVOKED);
-        repository.save(consent);
+        consentRepository.save(consent);
 
         historyService.saveHistory(consent, ActionStatus.REVOKE);
     }
+
+
 }
