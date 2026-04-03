@@ -1,5 +1,6 @@
 package br.com.sensedia.service;
 
+import br.com.sensedia.domain.enums.ActionStatus;
 import br.com.sensedia.domain.enums.ConsentStatus;
 import br.com.sensedia.domain.model.Consent;
 import br.com.sensedia.dto.ConsentRequestDTO;
@@ -160,5 +161,33 @@ class ConsentServiceTest {
         when(consentRepository.findById(idTest)).thenReturn(Optional.empty());
 
         assertThrows(ConsentNotFoundException.class, () -> service.getConsentById(idTest));
+    }
+
+    @Test
+    @DisplayName("Deve revogar um consentimento e salvar no histórico")
+    void shouldRevokeConsentSuccessfully() {
+
+        String idTest = "65f1a2b3c4d5e6f7a8b9c0d1";
+        Consent consent = new Consent();
+        consent.setId(idTest);
+        consent.setStatus(ConsentStatus.ACTIVE);
+
+        when(consentRepository.findById(idTest)).thenReturn(Optional.of(consent));
+
+        service.revokeConsent(idTest);
+
+        assertEquals(ConsentStatus.REVOKED, consent.getStatus());
+        verify(consentRepository, times(1)).save(consent);
+        verify(historyService, times(1)).saveHistory(consent, ActionStatus.REVOKE);
+    }
+
+    @Test
+    @DisplayName("Deve lançar exceção ao tentar revogar consentimento inexistente")
+    void shouldThrowExceptionWhenRevokingInexistent() {
+        String idTest = "65f1a2b3c4d5e6f7a8b9c0d1";
+        when(consentRepository.findById(idTest)).thenReturn(Optional.empty());
+
+        assertThrows(ConsentNotFoundException.class, () -> service.revokeConsent(idTest));
+        verify(consentRepository, never()).save(any());
     }
 }
