@@ -1,5 +1,6 @@
 package br.com.sensedia.service;
 
+import br.com.sensedia.domain.enums.ActionStatus;
 import br.com.sensedia.domain.enums.ConsentStatus;
 import br.com.sensedia.domain.model.Consent;
 import br.com.sensedia.dto.ConsentRequestDTO;
@@ -20,11 +21,15 @@ import java.util.UUID;
 public class ConsentService {
 
     private final ConsentRepository repository;
+    private final ConsentHistoryService historyService;
     private final ConsentMapper mapper;
 
-    public ConsentService( ConsentRepository repository, ConsentMapper mapper) {
+
+    public ConsentService( ConsentRepository repository, ConsentHistoryService historyService ,ConsentMapper mapper) {
         this.repository = repository;
+        this.historyService = historyService;
         this.mapper = mapper;
+
     }
 
     public CreateConsentResultDTO createConsent(ConsentRequestDTO dto, String idempotencyKey) {
@@ -58,6 +63,8 @@ public class ConsentService {
 
         Consent savedConsent = repository.save(newConsent);
 
+        historyService.saveHistory(savedConsent, ActionStatus.CREATE);
+
         CreateConsentResultDTO response = new CreateConsentResultDTO(
                 mapper.toDto(savedConsent),
                 true
@@ -82,10 +89,23 @@ public class ConsentService {
         consent.setAdditionalInfo(data.additionalInfo());
 
 
-        Consent UpdateConsent = repository.save(consent);
+        Consent updateConsent = repository.save(consent);
 
+        historyService.saveHistory(updateConsent, ActionStatus.UPDATE);
 
-        return   mapper.toDto(UpdateConsent);
+        return mapper.toDto(updateConsent);
+    }
+
+    public ConsentResponseDTO patchConsent(UUID id, ConsentRequestDTO dto) {
+        Consent existingConsent = repository.findById(id)
+                .orElseThrow(() -> new ConsentNotFoundException("Consentimento não encontrado"));
+
+        mapper.updateResultFromDto(dto, existingConsent);
+        Consent saved = repository.save(existingConsent);
+
+        historyService.saveHistory(saved, ActionStatus.PATCH_UPDATE);
+
+        return mapper.toDto(saved);
     }
 
     public void revokeConsent(UUID id) {
@@ -94,7 +114,7 @@ public class ConsentService {
 
         consent.setStatus(ConsentStatus.REVOKED);
         repository.save(consent);
+
+        historyService.saveHistory(consent, ActionStatus.REVOKE);
     }
-
-
 }
