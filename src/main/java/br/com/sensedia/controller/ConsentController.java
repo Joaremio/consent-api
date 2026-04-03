@@ -4,6 +4,11 @@ import br.com.sensedia.dto.ConsentRequestDTO;
 import br.com.sensedia.dto.ConsentResponseDTO;
 import br.com.sensedia.dto.CreateConsentResultDTO;
 import br.com.sensedia.service.ConsentService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -11,12 +16,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
-import java.util.List;
 import java.util.UUID;
 
 @RestController
 @RequestMapping("/consents")
+@Tag(name = "Consentimento", description = "Endpoints para gestão do ciclo de vida de consentimentos no Open Insurance")
 public class ConsentController {
 
     private final ConsentService consentService;
@@ -25,8 +29,15 @@ public class ConsentController {
         this.consentService = consentService;
     }
 
+    @Operation(summary = "Criar novo consentimento", description = "Cria um registro de consentimento. Suporta idempotência através do header X-Idempotency-Key.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Consentimento criado com sucesso"),
+            @ApiResponse(responseCode = "200", description = "Retorno de consentimento já processado (Idempotência)"),
+            @ApiResponse(responseCode = "400", description = "Dados de requisição inválidos")
+    })
     @PostMapping
     public ResponseEntity<ConsentResponseDTO> create(
+            @Parameter(description = "Chave de idempotência para evitar duplicidade", required = true)
             @RequestHeader("X-Idempotency-Key") String idempotencyKey,
             @Valid @RequestBody ConsentRequestDTO dto) {
 
@@ -39,28 +50,28 @@ public class ConsentController {
         return ResponseEntity.ok(result.data());
     }
 
+    @Operation(summary = "Buscar consentimento por ID")
     @GetMapping("/{consentId}")
-    public ResponseEntity<ConsentResponseDTO> getConsentById(@PathVariable  UUID consentId) {
-        return ResponseEntity.status(HttpStatus.OK).body(consentService.getConsentById(consentId));
+    public ResponseEntity<ConsentResponseDTO> getConsentById(@PathVariable UUID consentId) {
+        return ResponseEntity.ok(consentService.getConsentById(consentId));
     }
 
+    @Operation(summary = "Listar consentimentos", description = "Retorna uma lista paginada de todos os consentimentos.")
     @GetMapping
     public ResponseEntity<Page<ConsentResponseDTO>> getAllConsents(Pageable pageable) {
-        return ResponseEntity.status(HttpStatus.OK).body(consentService.getAllConsents(pageable));
+        return ResponseEntity.ok(consentService.getAllConsents(pageable));
     }
 
+    @Operation(summary = "Atualizar consentimento", description = "Permite atualizar informações de um consentimento existente.")
     @PutMapping("/{id}")
-    public ResponseEntity<ConsentResponseDTO> update(
-            @PathVariable UUID id,
-            @Valid @RequestBody ConsentRequestDTO dto) {
+    public ResponseEntity<ConsentResponseDTO> update(@PathVariable UUID id, @Valid @RequestBody ConsentRequestDTO dto) {
         return ResponseEntity.ok(consentService.updateConsent(id, dto));
     }
 
+    @Operation(summary = "Revogar consentimento", description = "Realiza a revogação lógica (Soft Delete) do consentimento.")
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void revoke(@PathVariable UUID id) {
         consentService.revokeConsent(id);
     }
-
-
 }
