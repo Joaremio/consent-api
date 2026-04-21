@@ -1,6 +1,6 @@
 # 🧾 Consent API
 
-API REST para gerenciamento do ciclo de vida de consentimentos, desenvolvida como solução para desafio técnico da sensedia.
+API REST para gerenciamento do ciclo de vida de consentimentos.
 
 ---
 
